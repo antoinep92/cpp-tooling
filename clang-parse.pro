@@ -24,3 +24,7 @@ LIBS += -lLLVM-3.4 \
         -lclangAST \
         -lclangEdit \
         -lclangLex \
+
+HEADERS += \
+    simple-parse.h \
+    naming-convention.h
