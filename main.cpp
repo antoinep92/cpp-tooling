@@ -1,10 +1,5 @@
 #include <iostream>
-#include <memory>
 #include <functional>
-#include <unordered_map>
-using std::cout;
-using std::endl;
-
 
 #include "llvm/Support/CommandLine.h"
 #include "clang/Frontend/FrontendActions.h"
