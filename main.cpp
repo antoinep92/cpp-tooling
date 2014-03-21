@@ -50,7 +50,7 @@ int main(int argc, const char **argv) {
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpRawTokensAction>()); };
 	if(print_preproc)
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpTokensAction>()); };
-	if(print_macors)
+	if(print_macros)
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::PrintPreprocessedAction>()); };
 	if(print_decls)
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::ASTDeclListAction>()); };
