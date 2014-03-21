@@ -22,7 +22,7 @@ struct out_of_bounds : std::exception {
 	size_t input;
 	size_t bound;
 	out_of_bounds(size_t input, size_t bound) : input(input), bound(bound) {}
-	const char* what() { return make_string("out of bounds access at ", input, " where bound was ", bound).c_str(); }
+	const char* what() const noexcept override { return make_string("out of bounds access at ", input, " where bound was ", bound).c_str(); }
 };
 
 template<class T> T max(T a, T b) { return a > b ? a : b; }
@@ -95,13 +95,13 @@ struct derived : base {
 
 template<class F> checked_array<int> && build(size_t n, F f) {
 	checked_array<int> arr(n);
-	for(int i = 0; i < n; ++i) arr[i] = f();
+	for(size_t i = 0; i < n; ++i) arr[i] = f();
 	return std::move(arr);
 }
 
 template<class T> typename T::value_type sum(const T & vec) {
 	typename T::value_type v = 0;
-	for(int i = 0; i < vec.size(); ++i) v += vec[i];
+	for(size_t i = 0; i < vec.size(); ++i) v += vec[i];
 	return v;
 }
 
