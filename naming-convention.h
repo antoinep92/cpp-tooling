@@ -16,16 +16,6 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-
-
-using namespace clang;
-using namespace clang::ast_matchers;
-using namespace clang::tooling;
-using namespace llvm;
-
-static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
-static cl::extrahelp MoreHelp("\nMore help text...");
-
 namespace clang { namespace ast_matchers {
 	AST_MATCHER_P(FieldDecl, inClass, internal::Matcher<CXXRecordDecl>, InnerMatcher) {
 			const CXXRecordDecl *Parent = dynamic_cast<const CXXRecordDecl*>(Node.getParent());
@@ -45,7 +35,6 @@ auto matcher =
 
 struct Callback : MatchFinder::MatchCallback {
 	Replacements *replacements;
-	//Callback(Replacements * replacements) : replacements(replacements) {}
 	virtual void run(const MatchFinder::MatchResult & result) {
 		if(const Decl * decl = result.Nodes.getNodeAs<Decl>("x")) {
 			decl->dump();
@@ -67,12 +56,6 @@ struct Callback : MatchFinder::MatchCallback {
 
 
 
-	//return tool.run(newFrontendActionFactory<clang::DumpRawTokensAction>()); // print tokens before preprocess
-	//return tool.run(newFrontendActionFactory<clang::DumpTokensAction>()); // print tokens after preprocess
-	//return tool.run(newFrontendActionFactory<clang::PrintPreprocessedAction>()); // print all #defines
-	//return tool.run(newFrontendActionFactory<clang::ASTDeclListAction>()); // print all declarations
-	//return tool.run(newFrontendActionFactory<clang::ASTDumpAction>()); // print the whole AST
-	//return tool.run(newFrontendActionFactory<clang::ASTPrintAction>()); // reformat the AST as source code
 
 
 	/*ast_matchers::MatchFinder finder;
