@@ -45,7 +45,7 @@ int main(int argc, const char **argv) {
 
 	std::function<int()> action;
 	if(print_use_graph)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<PrintUseGraph>()); };
+		action = [&](){ return PrintUseGraph::run(tool); };
 	if(print_lex)
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpRawTokensAction>()); };
 	if(print_preproc)

@@ -62,6 +62,10 @@ struct PrintUseGraph : clang::ASTFrontendAction {
 	virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef sourceFile) override {
 		return new Impl(ci.getSourceManager(), sourceFile);
 	}
+
+	static int run(clang::tooling::ClangTool & tool) {
+		return tool.run(clang::tooling::newFrontendActionFactory<PrintUseGraph>());
+	}
 };
 
 #endif // SIMPLEPARSE_H
