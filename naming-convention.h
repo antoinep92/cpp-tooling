@@ -23,45 +23,53 @@ namespace clang { namespace ast_matchers {
 	}
 } }
 
-auto matcher =
-	fieldDecl(
-		hasName("x"),
-		isPublic(),
-		inClass(
-			isDerivedFrom("base")
-		)
-	).bind("x");
 
 
-struct Callback : MatchFinder::MatchCallback {
-	Replacements *replacements;
-	virtual void run(const MatchFinder::MatchResult & result) {
-		if(const Decl * decl = result.Nodes.getNodeAs<Decl>("x")) {
-			decl->dump();
-			/*Replacement r(
-				*result.SourceManager,
-				CharSourceRange::getTokenRange(decl->getLocation()),
-				"x_replaced"
-			);
-			cout << r.toString() << endl;
-			Rewriter rw(*result.SourceManager, LangOptions());
-			r.apply(rw);
-			cout << std::string(rw.buffer_begin(), rw.buffer_end()) << endl;*/
+
+
+
+
+
+struct FindDemo : clang::ast_matchers::MatchFinder {
+	typedef clang::ast_matchers::MatchFinder Parent;
+
+	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
+		//Replacements *replacements;
+		virtual void run(const MatchFinder::MatchResult & result) {
+			if(const clang::Decl * decl = result.Nodes.getNodeAs<clang::Decl>("x")) {
+				decl->dump();
+				/*Replacement r(
+					*result.SourceManager,
+					CharSourceRange::getTokenRange(decl->getLocation()),
+					"x_replaced"
+				);
+				cout << r.toString() << endl;
+				Rewriter rw(*result.SourceManager, LangOptions());
+				r.apply(rw);
+				cout << std::string(rw.buffer_begin(), rw.buffer_end()) << endl;*/
+			}
 		}
+	};
+
+	static int run(clang::tooling::ClangTool & tool) {
+
+		using namespace clang::ast_matchers;
+		auto match_x_field =
+			fieldDecl(
+				hasName("x"),
+				isPublic(),
+				inClass(
+					isDerivedFrom("base")
+				)
+			).bind("x");
+
+		Callback callback;
+		FindDemo find_demo;
+		find_demo.addMatcher(match_x_field, &callback);
+		return tool.run(clang::tooling::newFrontendActionFactory(&find_demo));
 	}
+
 };
-
-
-
-
-
-
-
-
-	/*ast_matchers::MatchFinder finder;
-	Callback callback;
-	finder.addMatcher(matcher, &callback);
-	return tool.run(newFrontendActionFactory(&finder));*/
 
 
 

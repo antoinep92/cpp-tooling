@@ -17,6 +17,7 @@
 #include "clang/Tooling/Tooling.h"
 
 #include "simple-parse.h"
+#include "naming-convention.h"
 
 static llvm::cl::OptionCategory option_category("Action selector options");
 static llvm::cl::extrahelp options_help(clang::tooling::CommonOptionsParser::HelpMessage);
@@ -24,6 +25,8 @@ static llvm::cl::extrahelp options_help(clang::tooling::CommonOptionsParser::Hel
 // developped here
 static llvm::cl::opt<bool>
 print_use_graph("print-use-graph",		llvm::cl::desc("parse + print classes/functions declarations and what they use"));
+static llvm::cl::opt<bool>
+find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"));
 
 // from clang
 static llvm::cl::opt<bool>
@@ -46,6 +49,9 @@ int main(int argc, const char **argv) {
 	std::function<int()> action;
 	if(print_use_graph)
 		action = [&](){ return PrintUseGraph::run(tool); };
+	if(find_demo)
+		action = [&](){ return FindDemo::run(tool); };
+
 	if(print_lex)
 		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpRawTokensAction>()); };
 	if(print_preproc)
