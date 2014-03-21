@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2014
+ *
+ * C++ tools, see README for more info
+ *
+ * example usage:
+ *		clang-parse -action-parse test.cpp -- -I/usr/lib/gcc/x86_64-unknown-linux-gnu/4.8.2/include -std=c++11
+ *
+ */
+
 #include <iostream>
 #include <functional>
 
