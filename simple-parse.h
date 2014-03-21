@@ -14,31 +14,20 @@ struct SimpleParseAction : clang::ASTFrontendAction {
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 		typedef clang::RecursiveASTVisitor<Impl> Parent;
-		using Parent::shouldVisitImplicitCode;
-		using Parent::shouldVisitTemplateInstantiations;
-		using Parent::shouldWalkTypesOfTypeLocs;
-		using Parent::VisitDecl;
-		using Parent::VisitType;
 
 		clang::SourceManager & sourceManager;
 		clang::StringRef sourceFile;
-
 		bool indent;
 
 		Impl(clang::SourceManager & sourceManager, clang::StringRef sourceFile):
 			sourceManager(sourceManager), sourceFile(sourceFile), indent(false) {}
 
-		bool shouldVisitTemplateInstantiations() const { return false; }
-		bool shouldVisitImplicitCode() const { return false; }
-		bool shouldWalkTypesOfTypeLocs() const { return false; }
-
 		virtual void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
 			std::cout << "Parsing file \"" << sourceFile.str() << '"' << std::endl;
 			TraverseDecl(context.getTranslationUnitDecl());
-			//context.getTranslationUnitDecl()->dump();
 		}
 
-		bool VisitStmt(clang::Stmt * stmt) {
+		bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
 			if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) {
 				if(sourceManager.getFilename(stmt->getLocStart()).equals(sourceFile)) {
 					clang::ValueDecl* decl = static_cast<clang::DeclRefExpr*>(stmt)->getDecl();
@@ -54,8 +43,7 @@ struct SimpleParseAction : clang::ASTFrontendAction {
 			return true;
 		}
 
-		bool VisitDecl(clang::Decl *decl) {
-
+		bool VisitDecl(clang::Decl *decl) { // from RecursiveASTVisitor
 			bool func = llvm::dyn_cast<clang::FunctionDecl>(decl);
 			if(llvm::dyn_cast<clang::CXXRecordDecl>(decl) || (func && decl->hasBody())) {
 				if(sourceManager.getFilename(decl->getLocation()).equals(sourceFile)) {
@@ -69,7 +57,6 @@ struct SimpleParseAction : clang::ASTFrontendAction {
 			}
 			return true;
 		}
-		//bool VisitType(Type *type) { type->dump(); return false; }
 
 	};
 	virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef sourceFile) override {
