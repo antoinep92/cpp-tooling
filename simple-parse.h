@@ -10,7 +10,7 @@
 #include <iostream>
 
 
-struct SimpleParseAction : clang::ASTFrontendAction {
+struct PrintUseGraph : clang::ASTFrontendAction {
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 		typedef clang::RecursiveASTVisitor<Impl> Parent;
