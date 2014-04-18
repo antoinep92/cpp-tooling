@@ -18,6 +18,7 @@
 
 #include "print-uses.h"
 #include "find-demo.h"
+#include "replace-demo.h"
 
 static llvm::cl::OptionCategory my_options("Action selector options");
 static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
