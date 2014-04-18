@@ -10,7 +10,7 @@
 #include <iostream>
 
 
-struct PrintUseGraph : clang::ASTFrontendAction {
+struct PrintUses : clang::ASTFrontendAction {
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 		typedef clang::RecursiveASTVisitor<Impl> Parent;
@@ -64,7 +64,7 @@ struct PrintUseGraph : clang::ASTFrontendAction {
 	}
 
 	static int run(clang::tooling::ClangTool & tool) {
-		return tool.run(clang::tooling::newFrontendActionFactory<PrintUseGraph>());
+		return tool.run(clang::tooling::newFrontendActionFactory<PrintUses>());
 	}
 };
 

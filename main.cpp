@@ -16,8 +16,8 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 
-#include "simple-parse.h"
-#include "naming-convention.h"
+#include "print-uses.h"
+#include "find-demo.h"
 
 static llvm::cl::OptionCategory my_options("Action selector options");
 static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
@@ -26,7 +26,7 @@ static llvm::cl::extrahelp extra_help("Help Message TODO\n\n");
 
 // developped here
 static llvm::cl::opt<bool>
-print_use_graph("print-use-graph",		llvm::cl::desc("parse + print classes/functions declarations and what they use"), llvm::cl::cat(my_options));
+print_uses("print-uses",			llvm::cl::desc("parse + print classes/functions declarations and what they use"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
 find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"), llvm::cl::cat(my_options));
 
@@ -49,8 +49,8 @@ int main(int argc, const char **argv) {
 	clang::tooling::ClangTool tool(option_parser.getCompilations(), option_parser.getSourcePathList());
 
 	std::function<int()> action;
-	if(print_use_graph)
-		action = [&](){ return PrintUseGraph::run(tool); };
+	if(print_uses)
+		action = [&](){ return PrintUses::run(tool); };
 	if(find_demo)
 		action = [&](){ return FindDemo::run(tool); };
 

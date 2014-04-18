@@ -26,5 +26,5 @@ LIBS += -lLLVM-3.4 \
         -lclangLex \
 
 HEADERS += \
-    simple-parse.h \
-    naming-convention.h
+    print-uses.h \
+    find-demo.h
