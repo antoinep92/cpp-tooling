@@ -34,7 +34,7 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 		}
 	};
 
-	static int run(clang::tooling::ClangTool & tool) {
+	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
 
 		using namespace clang::ast_matchers;
 		auto match_x_field =
@@ -45,7 +45,7 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 					isDerivedFrom("base")
 				)
 			).bind("x");
-
+		clang::tooling::ClangTool tool(db, sources);
 		Callback callback;
 		FindDemo find_demo;
 		find_demo.addMatcher(match_x_field, &callback);

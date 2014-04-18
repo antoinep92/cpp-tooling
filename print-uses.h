@@ -6,6 +6,7 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 #include "clang/Frontend/CompilerInstance.h"
+#include "clang/Tooling/Tooling.h"
 
 #include <iostream>
 
@@ -63,7 +64,8 @@ struct PrintUses : clang::ASTFrontendAction {
 		return new Impl(ci.getSourceManager(), sourceFile);
 	}
 
-	static int run(clang::tooling::ClangTool & tool) {
+	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+		clang::tooling::ClangTool tool(db, sources);
 		return tool.run(clang::tooling::newFrontendActionFactory<PrintUses>());
 	}
 };

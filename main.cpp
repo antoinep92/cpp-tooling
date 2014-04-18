@@ -44,28 +44,35 @@ print_ast(		"print-ast",			llvm::cl::desc("parse + print the whole AST"), llvm::
 static llvm::cl::opt<bool>
 print_source(	"print-source",			llvm::cl::desc("parse + resynthetize source"), llvm::cl::cat(my_options));
 
+
+template<class Action> int runBuiltin(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+	clang::tooling::ClangTool tool(db, sources);
+	return tool.run(clang::tooling::newFrontendActionFactory<Action>());
+}
+
 int main(int argc, const char **argv) {
 	clang::tooling::CommonOptionsParser option_parser(argc, argv);
-	clang::tooling::ClangTool tool(option_parser.getCompilations(), option_parser.getSourcePathList());
+	auto & db = option_parser.getCompilations();
+	auto sources = option_parser.getSourcePathList();
 
 	std::function<int()> action;
 	if(print_uses)
-		action = [&](){ return PrintUses::run(tool); };
+		action = [&](){ return PrintUses::run(db, sources); };
 	if(find_demo)
-		action = [&](){ return FindDemo::run(tool); };
+		action = [&](){ return FindDemo::run(db, sources); };
 
 	if(print_lex)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpRawTokensAction>()); };
+		action = [&](){ return runBuiltin<clang::DumpRawTokensAction>(db, sources); };
 	if(print_preproc)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::DumpTokensAction>()); };
+		action = [&](){ return runBuiltin<clang::DumpTokensAction>(db, sources); };
 	if(print_macros)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::PrintPreprocessedAction>()); };
+		action = [&](){ return runBuiltin<clang::PrintPreprocessedAction>(db, sources); };
 	if(print_decls)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::ASTDeclListAction>()); };
+		action = [&](){ return runBuiltin<clang::ASTDeclListAction>(db, sources); };
 	if(print_ast)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::ASTDumpAction>()); };
+		action = [&](){ return runBuiltin<clang::ASTDumpAction>(db, sources); };
 	if(print_source)
-		action = [&](){ return tool.run(clang::tooling::newFrontendActionFactory<clang::ASTPrintAction>()); };
+		action = [&](){ return runBuiltin<clang::ASTPrintAction>(db, sources); };
 
 	if(!action) {
 		std::cerr << "no known action selected" << std::endl;
