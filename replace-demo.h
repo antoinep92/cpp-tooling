@@ -1,0 +1,4 @@
+#ifndef REPLACEDEMO_H
+#define REPLACEDEMO_H
+
+#endif // REPLACEDEMO_H
