@@ -1,7 +1,6 @@
 #ifndef FINDDEMO_H
 #define FINDDEMO_H
 
-
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
 #include "clang/Tooling/Refactoring.h"
@@ -24,29 +23,13 @@ namespace clang { namespace ast_matchers {
 } }
 
 
-
-
-
-
-
-
 struct FindDemo : clang::ast_matchers::MatchFinder {
 	typedef clang::ast_matchers::MatchFinder Parent;
 
 	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
-		//Replacements *replacements;
 		virtual void run(const MatchFinder::MatchResult & result) {
 			if(const clang::Decl * decl = result.Nodes.getNodeAs<clang::Decl>("x")) {
 				decl->dump();
-				/*Replacement r(
-					*result.SourceManager,
-					CharSourceRange::getTokenRange(decl->getLocation()),
-					"x_replaced"
-				);
-				cout << r.toString() << endl;
-				Rewriter rw(*result.SourceManager, LangOptions());
-				r.apply(rw);
-				cout << std::string(rw.buffer_begin(), rw.buffer_end()) << endl;*/
 			}
 		}
 	};
@@ -70,7 +53,6 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 	}
 
 };
-
 
 
 #endif // NAMINGCONVENTION_H
