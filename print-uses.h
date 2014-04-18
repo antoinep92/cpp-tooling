@@ -1,5 +1,5 @@
-#ifndef SIMPLEPARSE_H
-#define SIMPLEPARSE_H
+#ifndef PRINTUSES_H
+#define PRINTUSES_H
 
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/AST/RecursiveASTVisitor.h"

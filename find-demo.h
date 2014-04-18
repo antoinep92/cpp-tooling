@@ -1,5 +1,5 @@
-#ifndef NAMINGCONVENTION_H
-#define NAMINGCONVENTION_H
+#ifndef FINDDEMO_H
+#define FINDDEMO_H
 
 
 #include "clang/ASTMatchers/ASTMatchers.h"
