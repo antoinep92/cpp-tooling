@@ -19,28 +19,30 @@
 #include "simple-parse.h"
 #include "naming-convention.h"
 
-static llvm::cl::OptionCategory option_category("Action selector options");
-static llvm::cl::extrahelp options_help(clang::tooling::CommonOptionsParser::HelpMessage);
+static llvm::cl::OptionCategory my_options("Action selector options");
+static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
+static llvm::cl::extrahelp extra_help("Help Message TODO\n\n");
+
 
 // developped here
 static llvm::cl::opt<bool>
-print_use_graph("print-use-graph",		llvm::cl::desc("parse + print classes/functions declarations and what they use"));
+print_use_graph("print-use-graph",		llvm::cl::desc("parse + print classes/functions declarations and what they use"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"));
+find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"), llvm::cl::cat(my_options));
 
 // from clang
 static llvm::cl::opt<bool>
-print_lex(		"print-lex",			llvm::cl::desc("lex + print tokens before pre-processor"));
+print_lex(		"print-lex",			llvm::cl::desc("lex + print tokens before pre-processor"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-print_preproc(	"print-preprocess",		llvm::cl::desc("lex + print tokens after pre-processor"));
+print_preproc(	"print-preprocess",		llvm::cl::desc("lex + print tokens after pre-processor"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-print_macros(	"print-macros",			llvm::cl::desc("print #defines"));
+print_macros(	"print-macros",			llvm::cl::desc("print #defines"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-print_decls(	"print-declarations",	llvm::cl::desc("parse + print declarations"));
+print_decls(	"print-declarations",	llvm::cl::desc("parse + print declarations"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-print_ast(		"print-ast",			llvm::cl::desc("parse + print the whole AST"));
+print_ast(		"print-ast",			llvm::cl::desc("parse + print the whole AST"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-print_source(	"print-source",			llvm::cl::desc("parse + resynthetize source"));
+print_source(	"print-source",			llvm::cl::desc("parse + resynthetize source"), llvm::cl::cat(my_options));
 
 int main(int argc, const char **argv) {
 	clang::tooling::CommonOptionsParser option_parser(argc, argv);
