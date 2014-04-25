@@ -16,6 +16,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/Lex/Lexer.h"
 
+#include <sstream>
 // reverse-enginered from http://llvm.org/svn/llvm-project/clang-tools-extra/trunk/remove-cstr-calls/RemoveCStrCalls.cpp
 
 struct ReplaceDemo : clang::ast_matchers::MatchFinder {
@@ -33,7 +34,10 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 							sm.getDecomposedLoc(clang::Lexer::getLocForEndOfToken(end, 0, sm, clang::LangOptions())).second
 							- sm.getDecomposedLoc(start).second
 							);
-				replacements.insert(clang::tooling::Replacement(sm, decl, text));
+				std::stringstream ss;
+				ss << text << '_' << text.size();
+				decl->dump();
+				replacements.insert(clang::tooling::Replacement(sm, decl->getSourceRange(), ss.str()));
 			}
 		}
 	};
