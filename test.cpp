@@ -3,6 +3,8 @@
 #include <sstream>
 #include <iostream>
 
+namespace test {
+
 void make_string_(std::stringstream &) {}
 
 template<class F, class... T>
@@ -110,3 +112,5 @@ int test() {
 	std::cout << sum(data) << std::endl;
 	return 0;
 }
+
+} // test namespace
