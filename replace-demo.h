@@ -17,6 +17,16 @@
 #include "clang/Lex/Lexer.h"
 
 #include <sstream>
+
+// matches a field in a namespace
+namespace clang { namespace ast_matchers {
+	AST_MATCHER_P(Decl, inNamespace, internal::Matcher<clang::NamespaceDecl>, InnerMatcher) {
+		auto ns = llvm::dyn_cast<const clang::NamespaceDecl>(Node.getDeclContext()->getEnclosingNamespaceContext());
+			return (ns && InnerMatcher.matches(*ns, Finder, Builder));
+	}
+} }
+
+
 // inspired by http://llvm.org/svn/llvm-project/clang-tools-extra/trunk/remove-cstr-calls/RemoveCStrCalls.cpp
 
 struct ReplaceDemo : clang::ast_matchers::MatchFinder {
@@ -26,19 +36,20 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 		clang::tooling::Replacements & replacements;
 		Callback(clang::tooling::Replacements & replacements) : replacements(replacements) {}
 		void run(const MatchFinder::MatchResult & result) override {
-			std::cout << "pass" << std::endl;
 			if(const clang::Decl * decl = result.Nodes.getNodeAs<clang::Decl>("x")) {
 				auto & sm = *result.SourceManager;
 				auto start = sm.getSpellingLoc(decl->getLocStart()), end = sm.getSpellingLoc(decl->getLocEnd());
-				std::string text(
+				std::string original(
 							sm.getCharacterData(start),
 							sm.getDecomposedLoc(clang::Lexer::getLocForEndOfToken(end, 0, sm, clang::LangOptions())).second
 							- sm.getDecomposedLoc(start).second
 							);
 				std::stringstream ss;
-				ss << text << '_' << text.size();
-				decl->dump();
-				replacements.insert(clang::tooling::Replacement(sm, clang::CharSourceRange::getTokenRange(decl->getSourceRange()), ss.str()));
+				ss << original << '_' << original.size();
+				std::string replacement = ss.str();
+				//decl->dump();
+				std::cout << original << "  ==>  " << replacement << std::endl;
+				replacements.insert(clang::tooling::Replacement(sm, clang::CharSourceRange::getTokenRange(decl->getSourceRange()), replacement));
 			}
 		}
 	};
@@ -46,7 +57,7 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
 
 		using namespace clang::ast_matchers;
-		auto match_decl = fieldDecl().bind("x");
+		auto match_decl = fieldDecl(inNamespace(hasName("test"))).bind("x");
 
 		clang::tooling::RefactoringTool tool(db, sources);
 		Callback callback(tool.getReplacements());
