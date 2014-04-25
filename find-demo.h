@@ -15,9 +15,10 @@
 #include "clang/AST/ASTContext.h"
 #include "clang/Frontend/CompilerInstance.h"
 
+// matches a field in a specific class
 namespace clang { namespace ast_matchers {
 	AST_MATCHER_P(FieldDecl, inClass, internal::Matcher<CXXRecordDecl>, InnerMatcher) {
-			const CXXRecordDecl *Parent = dynamic_cast<const CXXRecordDecl*>(Node.getParent());
+			const CXXRecordDecl * Parent = dynamic_cast<const CXXRecordDecl*>(Node.getParent());
 			return (Parent && InnerMatcher.matches(*Parent, Finder, Builder));
 	}
 } }
