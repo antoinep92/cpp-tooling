@@ -27,7 +27,7 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 	typedef clang::ast_matchers::MatchFinder Parent;
 
 	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
-		virtual void run(const MatchFinder::MatchResult & result) {
+		void run(const MatchFinder::MatchResult & result) override {
 			if(const clang::Decl * decl = result.Nodes.getNodeAs<clang::Decl>("x")) {
 				decl->dump();
 			}
