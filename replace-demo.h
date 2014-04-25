@@ -62,8 +62,8 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 		clang::tooling::RefactoringTool tool(db, sources);
 		Callback callback(tool.getReplacements());
 		ReplaceDemo replace_demo;
-		replace_demo.addMatcher(match_decl, &callback);
-		return tool.run(clang::tooling::newFrontendActionFactory(&replace_demo));
+		replace_demo.addMatcher(match_decl, &callback);)
+		return tool.runAndSave(clang::tooling::newFrontendActionFactory(&replace_demo));
 	}
 
 };
