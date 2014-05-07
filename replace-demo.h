@@ -63,7 +63,12 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 		Callback callback(tool.getReplacements());
 		ReplaceDemo replace_demo;
 		replace_demo.addMatcher(match_decl, &callback);
-		return tool.runAndSave(clang::tooling::newFrontendActionFactory(&replace_demo));
+		auto ret = tool.run(clang::tooling::newFrontendActionFactory(&replace_demo));
+		std::cout << "\nPatch shown below:" << std::endl;
+		for(auto & replacement : tool.getReplacements()) {
+			std::cout << "  " << replacement.toString() << std::endl;
+		}
+		return ret;
 	}
 
 };
