@@ -31,43 +31,29 @@ struct ReplaceRefs {
 	> Renames;
 	Renames renames;	// input
 
-	typedef std::unordered_map<
-		std::string,							/* original name */
-		std::pair<
-			clang::Decl*						/* canonical decl */,
-			std::unordered_set<clang::Decl*>	/* all decls (including canonical) */
-		>
-	> NamedDecls;
-	NamedDecls decls;							// built during first pass
+	struct Item {
+		std::pair<std::string, std::string> rename;
+		std::unordered_set<clang::Decl*> declarations;
+		std::unordered_set<clang::DeclRefExpr*> references;
+	};
 
 	typedef std::unordered_map<
-		clang::Decl*,								/* canonical decl */
-		std::pair<
-			std::unordered_set<clang::Decl*>,		/* all decls (first pass) */
-			std::unordered_set<clang::DeclRefExpr*> /* all refs (second pass) */
-		>
-	> Refs;
-	Refs refs;
+		clang::Decl*,	// canonical decl
+		Item			// renaming info, declarations and references
+	> Index;
+	Index index;
 
 	//clang::SourceManager & sourceManager;
 	//clang::tooling::Replacements & replacements;
 
 	ReplaceRefs(const Renames & renames) : renames(renames) {}
 
-	void declsToRefs() {
-		for(auto & d : decls) refs[d.second.first].first = d.second.second;
-	}
-
-
 	void processDecl(clang::NamedDecl * decl) { // first pass handler
 		auto iter = renames.find(decl->getQualifiedNameAsString());
 		if(iter != renames.end()) {
-			auto & r = decls[iter->first];
-			r.second.insert(decl);
-			if(decl->isCanonicalDecl()) {
-				assert(!r.first);
-				r.first = decl;
-			}
+			auto & item = index[decl->getCanonicalDecl()];
+			item.rename = *iter;
+			item.declarations.insert(decl->getUnderlyingDecl());
 		}
 	}
 
@@ -100,8 +86,8 @@ struct ReplaceRefs {
 	void processRef(clang::DeclRefExpr * ref) { // second pass handler
 		//ref->dump();
 		// TODO : find dump definition and find why it makes this work!
-		auto iter = refs.find(ref->getDecl()->getCanonicalDecl());
-		if(iter != refs.end()) iter->second.second.insert(ref);
+		auto iter = index.find(ref->getDecl()->getCanonicalDecl());
+		if(iter != index.end()) iter->second.references.insert(ref);
 	}
 
 	struct ScanRefs : clang::ASTFrontendAction { // second pass traversal
@@ -143,7 +129,6 @@ struct ReplaceRefs {
 
 		int r = tool.run(makeAction<ScanDecls>(top));
 		//if(!r) return r;
-		top.declsToRefs();
 		r = tool.run(makeAction<ScanRefs>(top));
 		top.dump();
 		return r;
@@ -151,19 +136,13 @@ struct ReplaceRefs {
 	}
 
 	void dump() const {
-		for(auto & rename : renames) {
-			std::cout << rename.first << " ==> " << rename.second << std::endl;
-			auto canonical = decls.find(rename.first);
-			if(canonical != decls.end()) {
-				std::cout << '\t' << "cannonical declaration : " << canonical->second.first << std::endl;
-				auto ref = refs.find(canonical->second.first);
-				std::cout << '\t' << "declarations:" << std::endl;
-				for(auto & decl : ref->second.first) std::cout << "\t\t" << decl << std::endl;
-				std::cout << '\t' << "referencing expressions:" << std::endl;
-				for(auto & ref : ref->second.second) std::cout << "\t\t" << ref << std::endl;
-			} else {
-				std::cout << '\t' << "<not found>" << std::endl;
-			}
+		for(auto & ip : index) {
+			std::cout << ip.second.rename.first << " ==> " << ip.second.rename.second << std::endl;
+			std::cout << '\t' << "cannonical declaration : " << ip.first << std::endl;
+			std::cout << '\t' << "declarations:" << std::endl;
+			for(auto & decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
+			std::cout << '\t' << "referencing expressions:" << std::endl;
+			for(auto & ref : ip.second.references) std::cout << "\t\t" << ref << std::endl;
 		}
 	}
 };
