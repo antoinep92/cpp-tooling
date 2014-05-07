@@ -1,5 +1,5 @@
-#ifndef REPLACEDEMO_H
-#define REPLACEDEMO_H
+#ifndef REPLACEDECL_H
+#define REPLACEDECL_H
 
 #include "clang/ASTMatchers/ASTMatchers.h"
 #include "clang/ASTMatchers/ASTMatchFinder.h"
@@ -75,4 +75,4 @@ struct ReplaceDecls : clang::ast_matchers::MatchFinder {
 
 
 
-#endif // REPLACEDEMO_H
+#endif // REPLACEDECL_H
