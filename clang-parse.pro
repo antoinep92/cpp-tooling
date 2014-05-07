@@ -29,4 +29,4 @@ HEADERS += \
     print-uses.h \
     find-demo.h \
     replace-decls.h \
-    replpace-var.h
+    replace-refs.h

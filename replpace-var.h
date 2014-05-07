@@ -1,4 +1,0 @@
-#ifndef REPLPACEVAR_H
-#define REPLPACEVAR_H
-
-#endif // REPLPACEVAR_H

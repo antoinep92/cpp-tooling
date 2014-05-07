@@ -19,6 +19,7 @@
 #include "print-uses.h"
 #include "find-demo.h"
 #include "replace-decls.h"
+#include "replace-refs.h"
 
 static llvm::cl::OptionCategory my_options("Action selector options");
 static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
@@ -32,6 +33,8 @@ static llvm::cl::opt<bool>
 find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
 replace_decls(	"replace-decls",	llvm::cl::desc("find all declarations and add a suffix"), llvm::cl::cat(my_options));
+static llvm::cl::opt<bool>
+replace_refs(	"replace-refs",		llvm::cl::desc("rename a declaration and all its references"), llvm::cl::cat(my_options));
 
 
 // from clang
@@ -66,6 +69,9 @@ int main(int argc, const char **argv) {
 		action = [&](){ return FindDemo::run(db, sources); };
 	if(replace_decls)
 		action = [&](){ return ReplaceDecls::run(db, sources); };
+	if(replace_refs)
+		action = [&](){ return ReplaceRefs::run(db, sources); };
+
 
 	if(print_lex)
 		action = [&](){ return runBuiltin<clang::DumpRawTokensAction>(db, sources); };
