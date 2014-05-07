@@ -14,7 +14,6 @@
 struct PrintUses : clang::ASTFrontendAction {
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
-		typedef clang::RecursiveASTVisitor<Impl> Parent;
 
 		clang::SourceManager & sourceManager;
 		clang::StringRef sourceFile;
@@ -23,7 +22,7 @@ struct PrintUses : clang::ASTFrontendAction {
 		Impl(clang::SourceManager & sourceManager, clang::StringRef sourceFile):
 			sourceManager(sourceManager), sourceFile(sourceFile), indent(false) {}
 
-		virtual void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
+		void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
 			std::cout << "Parsing file \"" << sourceFile.str() << '"' << std::endl;
 			TraverseDecl(context.getTranslationUnitDecl());
 		}
