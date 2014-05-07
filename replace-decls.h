@@ -29,7 +29,7 @@ namespace clang { namespace ast_matchers {
 
 // inspired by http://llvm.org/svn/llvm-project/clang-tools-extra/trunk/remove-cstr-calls/RemoveCStrCalls.cpp
 
-struct ReplaceDemo : clang::ast_matchers::MatchFinder {
+struct ReplaceDecls : clang::ast_matchers::MatchFinder {
 	typedef clang::ast_matchers::MatchFinder Parent;
 
 	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
@@ -61,9 +61,9 @@ struct ReplaceDemo : clang::ast_matchers::MatchFinder {
 
 		clang::tooling::RefactoringTool tool(db, sources);
 		Callback callback(tool.getReplacements());
-		ReplaceDemo replace_demo;
-		replace_demo.addMatcher(match_decl, &callback);
-		auto ret = tool.run(clang::tooling::newFrontendActionFactory(&replace_demo));
+		ReplaceDecls replace_decls;
+		replace_decls.addMatcher(match_decl, &callback);
+		auto ret = tool.run(clang::tooling::newFrontendActionFactory(&replace_decls));
 		std::cout << "\nPatch shown below:" << std::endl;
 		for(auto & replacement : tool.getReplacements()) {
 			std::cout << "  " << replacement.toString() << std::endl;

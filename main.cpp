@@ -31,7 +31,7 @@ print_uses("print-uses",			llvm::cl::desc("parse + print classes/functions decla
 static llvm::cl::opt<bool>
 find_demo(		"find-demo",		llvm::cl::desc("parse + finds an 'x' field inside classes inheriting from 'base'"), llvm::cl::cat(my_options));
 static llvm::cl::opt<bool>
-replace_demo(	"replace-demo",		llvm::cl::desc("find all declarations and add a suffix"), llvm::cl::cat(my_options));
+replace_decls(	"replace-decls",	llvm::cl::desc("find all declarations and add a suffix"), llvm::cl::cat(my_options));
 
 
 // from clang
@@ -64,8 +64,8 @@ int main(int argc, const char **argv) {
 		action = [&](){ return PrintUses::run(db, sources); };
 	if(find_demo)
 		action = [&](){ return FindDemo::run(db, sources); };
-	if(replace_demo)
-		action = [&](){ return ReplaceDemo::run(db, sources); };
+	if(replace_decls)
+		action = [&](){ return ReplaceDecls::run(db, sources); };
 
 	if(print_lex)
 		action = [&](){ return runBuiltin<clang::DumpRawTokensAction>(db, sources); };
