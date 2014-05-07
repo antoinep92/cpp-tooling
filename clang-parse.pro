@@ -28,4 +28,5 @@ LIBS += -lLLVM-3.4 \
 HEADERS += \
     print-uses.h \
     find-demo.h \
-    replace-decls.h
+    replace-decls.h \
+    replpace-var.h
