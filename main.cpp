@@ -70,7 +70,7 @@ int main(int argc, const char **argv) {
 	if(replace_decls)
 		action = [&](){ return ReplaceDecls::run(db, sources); };
 	if(replace_refs)
-		action = [&](){ return ReplaceRefs::run(db, sources); };
+		action = [&](){ return ReplaceRefs::run(db, sources, {{"test::array_counter", "array_cnt"},{"test::index_counter", "index_cnt"}}); };
 
 
 	if(print_lex)

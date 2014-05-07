@@ -52,6 +52,8 @@ struct ReplaceRefs {
 	//clang::SourceManager & sourceManager;
 	//clang::tooling::Replacements & replacements;
 
+	ReplaceRefs(const Renames & renames) : renames(renames) {}
+
 	void declsToRefs() {
 		for(auto & d : decls) refs[d.second.first].first = d.second.second;
 	}
@@ -96,7 +98,9 @@ struct ReplaceRefs {
 
 
 	void processRef(clang::DeclRefExpr * ref) { // second pass handler
-		auto iter = refs.find(ref->getDecl());
+		//ref->dump();
+		// TODO : find dump definition and find why it makes this work!
+		auto iter = refs.find(ref->getDecl()->getCanonicalDecl());
 		if(iter != refs.end()) iter->second.second.insert(ref);
 	}
 
@@ -133,16 +137,34 @@ struct ReplaceRefs {
 		return new Factory(parent);
 	}
 
-	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources, const Renames & renames) {
 		clang::tooling::ClangTool tool(db, sources);
-		ReplaceRefs top;
+		ReplaceRefs top(renames);
 
 		int r = tool.run(makeAction<ScanDecls>(top));
 		//if(!r) return r;
 		top.declsToRefs();
 		r = tool.run(makeAction<ScanRefs>(top));
+		top.dump();
 		return r;
 		// TODO : build replacements from refs
+	}
+
+	void dump() const {
+		for(auto & rename : renames) {
+			std::cout << rename.first << " ==> " << rename.second << std::endl;
+			auto canonical = decls.find(rename.first);
+			if(canonical != decls.end()) {
+				std::cout << '\t' << "cannonical declaration : " << canonical->second.first << std::endl;
+				auto ref = refs.find(canonical->second.first);
+				std::cout << '\t' << "declarations:" << std::endl;
+				for(auto & decl : ref->second.first) std::cout << "\t\t" << decl << std::endl;
+				std::cout << '\t' << "referencing expressions:" << std::endl;
+				for(auto & ref : ref->second.second) std::cout << "\t\t" << ref << std::endl;
+			} else {
+				std::cout << '\t' << "<not found>" << std::endl;
+			}
+		}
 	}
 };
 
