@@ -43,7 +43,6 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		const Renames & renames;
 		clang::tooling::Replacements & replacements;
 		clang::SourceManager & sourceManager;
-		//clang::tooling::Replacements & replacements;
 
 		Impl(const Renames & renames, clang::tooling::Replacements & replacements, clang::SourceManager & sourceManager) :
 			renames(renames), replacements(replacements), sourceManager(sourceManager) {}
@@ -58,8 +57,6 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 			if(llvm::dyn_cast<clang::NamedDecl>(decl)) {
 				auto iter = renames.find(static_cast<clang::NamedDecl*>(decl)->getQualifiedNameAsString());
 				if(iter != renames.end()) {
-					/*decl->dump();
-					decl->getCanonicalDecl()->dump();*/
 					auto & item = index[decl->getCanonicalDecl()];
 					item.rename = *iter;
 					item.declarations.insert(decl);
@@ -70,15 +67,6 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 
 		bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
 			if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) {
-				// TODO : find dump definition and find why it makes this work!
-				/*auto name = static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getQualifiedNameAsString();
-				for(auto & i : index) {
-					if(name == i.second.rename.first) {
-						static_cast<clang::DeclRefExpr*>(stmt)->dump();
-						static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->dump();
-						static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getCanonicalDecl()->dump();
-					}
-				}*/
 				auto iter = index.find(static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getCanonicalDecl());
 				if(iter != index.end()) iter->second.references.insert(static_cast<clang::DeclRefExpr*>(stmt));
 			}
