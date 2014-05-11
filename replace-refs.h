@@ -27,7 +27,9 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 
 	typedef std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */> Renames;
 	Renames renames;
-	ReplaceRefs(const Renames & renames) : renames(renames) {}
+	clang::tooling::Replacements & replacements;
+	ReplaceRefs(const Renames & renames, clang::tooling::Replacements & replacements) :
+		renames(renames), replacements(replacements) {}
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 
@@ -39,10 +41,12 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		std::unordered_map<clang::Decl*, Item> index;
 
 		const Renames & renames;
+		clang::tooling::Replacements & replacements;
 		clang::SourceManager & sourceManager;
 		//clang::tooling::Replacements & replacements;
 
-		Impl(const Renames & renames, clang::SourceManager & sourceManager) : renames(renames), sourceManager(sourceManager) {}
+		Impl(const Renames & renames, clang::tooling::Replacements & replacements, clang::SourceManager & sourceManager) :
+			renames(renames), replacements(replacements), sourceManager(sourceManager) {}
 
 		void processDecl(clang::NamedDecl * decl) {
 			auto iter = renames.find(decl->getQualifiedNameAsString());
@@ -98,23 +102,28 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		}
 	}; // Impl
 
-	static clang::tooling::FrontendActionFactory * newFactory(const Renames & renames) {
+	static clang::tooling::FrontendActionFactory * newFactory(const Renames & renames, clang::tooling::Replacements & replacements) {
 			struct Factory : clang::tooling::FrontendActionFactory {
 					const Renames & renames;
-					Factory(const Renames & renames) : renames(renames) {}
-					clang::FrontendAction *create() override { return new ReplaceRefs(renames); }
+					clang::tooling::Replacements & replacements;
+					Factory(const Renames & renames, clang::tooling::Replacements & replacements) : renames(renames), replacements(replacements) {}
+					clang::FrontendAction *create() override { return new ReplaceRefs(renames, replacements); }
 			};
-			return new Factory(renames);
+			return new Factory(renames, replacements);
 	}
 
 	virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
-		return new Impl(renames, ci.getSourceManager());
+		return new Impl(renames, replacements, ci.getSourceManager());
 	}
 
 	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources, const Renames & renames) {
-		clang::tooling::ClangTool tool(db, sources);
-		return tool.run(newFactory(renames));
-		// TODO : build replacements from refs
+		clang::tooling::RefactoringTool tool(db, sources);
+		int ret = tool.run(newFactory(renames, tool.getReplacements()));
+		std::cout << "\nPatch shown below:" << std::endl;
+		for(auto & replacement : tool.getReplacements()) {
+			std::cout << "  " << replacement.toString() << std::endl;
+		}
+		return ret;
 	}
 
 };
