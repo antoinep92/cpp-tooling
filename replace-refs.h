@@ -23,19 +23,34 @@
 #include <unordered_set>
 #include <string>
 
+#include <boost/algorithm/string.hpp>
+
 struct ReplaceRefs : clang::ASTFrontendAction {
+
+	static std::string shortName(const std::string & qualified) {
+		int index = findLast(qualified, "::");
+		if(index < 0) return qualified;
+		return qualified.c_str() + index;
+	}
+	static std::pair<int, int> align(const std::string & word, const std::string & text) {
+		// todo: implement using boost
+		return { 0, 0 };
+	}
 
 	typedef std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */> Renames;
 	Renames renames;
 	clang::tooling::Replacements & replacements;
-	static const bool save = true;
+	static const bool save = false;
 	ReplaceRefs(const Renames & renames, clang::tooling::Replacements & replacements) :
 		renames(renames), replacements(replacements) {}
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
-
+		struct {
+			std::string originalQualified, originalShort;
+			std::string newName;
+		} Rename;
 		struct Item {
-			std::pair<std::string, std::string> rename;
+			Rename rename;
 			std::unordered_set<clang::Decl*> declarations;
 			std::unordered_set<clang::DeclRefExpr*> references;
 		};
@@ -74,21 +89,29 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 			return true;
 		}
 
-		template<class X> void addReplacement(const X & xpr, const std::string & replacement) {
-			auto start = sourceManager.getSpellingLoc(xpr.getLocStart()), end = sourceManager.getSpellingLoc(xpr.getLocEnd());
-			std::string original(
+		template<class X> llvm::StringRef nodeText(const X * xpr) const {
+			auto start = sourceManager.getSpellingLoc(xpr->getLocStart()), end = sourceManager.getSpellingLoc(xpr->getLocEnd());
+			return {
 				sourceManager.getCharacterData(start),
 				sourceManager.getDecomposedLoc(clang::Lexer::getLocForEndOfToken(end, 0, sourceManager, clang::LangOptions())).second
 				- sourceManager.getDecomposedLoc(start).second
-			);
-			std::cout << '\t' << original << "  ==>  " << replacement << std::endl;
-			replacements.insert(clang::tooling::Replacement(sourceManager, clang::CharSourceRange::getTokenRange(xpr.getSourceRange()), replacement));
+			};
+		}
+
+		template<class X> void addReplacement(const X * xpr, const std::string & original, const std::string & replacement) {
+			auto text = nodeText(xpr);
+			std::cout << '\t' << text.str() << "  ==>  " << replacement << std::endl;
+			// TODO : handle substring for declarations
+			auto range = clang::CharSourceRange::getTokenRange(xpr->getSourceRange());
+			auto p = align(original, xpr);
+			auto target = clang::SourceRange(range.getBegin().getLocWithOffset(p.first), range.getEnd().getLocWithOffset(-p.second));
+			replacements.emplace(sourceManager, target, replacement);
 		}
 		void addReplacements() {
 			std::cout << "computing patch..." << std::endl;
 			for(auto & ip : index) {
-				for(auto decl : ip.second.declarations) addReplacement(*decl, ip.second.rename.second);
-				for(auto ref : ip.second.references) addReplacement(*ref, ip.second.rename.second);
+				for(auto decl : ip.second.declarations) addReplacement(decl, ip.second.rename.second);
+				for(auto ref : ip.second.references) addReplacement(ref, ip.second.rename.second);
 			}
 
 		}
