@@ -21,6 +21,8 @@
 #include "replace-decls.h"
 #include "replace-refs.h"
 
+// TODO: move tools to .cpp and add precompiled header to speed-up increamental builds
+
 static llvm::cl::OptionCategory my_options("Action selector options");
 static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
 static llvm::cl::extrahelp extra_help("Help Message TODO\n\n");
