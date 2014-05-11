@@ -60,33 +60,6 @@ struct ReplaceRefs {
 		}
 	}
 
-	struct ScanDecls : clang::ASTFrontendAction { // first pass traversal
-		ReplaceRefs & parent;
-		ScanDecls(ReplaceRefs & parent) : parent(parent) {}
-
-		struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
-			ReplaceRefs & parent;
-			Impl(ReplaceRefs & parent): parent(parent) {}
-
-			void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
-				std::cout << "Scanning decls..." << std::endl;
-				TraverseDecl(context.getTranslationUnitDecl());
-			}
-			bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
-				if(llvm::dyn_cast<clang::NamedDecl>(decl)) parent.processDecl(static_cast<clang::NamedDecl*>(decl));
-				return true;
-			}
-		}; // ScanDecls::Impl
-
-		virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
-			parent.sourceManager = &ci.getSourceManager();
-			return new Impl(parent);
-		}
-	}; // ScanDecls
-
-
-
-
 	void processRef(clang::DeclRefExpr * ref) { // second pass handler
 		// TODO : find dump definition and find why it makes this work!
 		auto name = ref->getDecl()->getQualifiedNameAsString();
@@ -104,30 +77,34 @@ struct ReplaceRefs {
 		}
 	}
 
-	struct ScanRefs : clang::ASTFrontendAction { // second pass traversal
+	struct Scan : clang::ASTFrontendAction { // first pass traversal
 		ReplaceRefs & parent;
-		ScanRefs(ReplaceRefs & parent) : parent(parent) {}
+		Scan(ReplaceRefs & parent) : parent(parent) {}
 
 		struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 			ReplaceRefs & parent;
-			Impl(ReplaceRefs & parent) : parent(parent) {}
+			Impl(ReplaceRefs & parent): parent(parent) {}
 
 			void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
-				std::cout << "Scanning refs..." << std::endl;
+				std::cout << "Scanning decls..." << std::endl;
 				TraverseDecl(context.getTranslationUnitDecl());
+			}
+			bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
+				if(llvm::dyn_cast<clang::NamedDecl>(decl)) parent.processDecl(static_cast<clang::NamedDecl*>(decl));
+				return true;
 			}
 
 			bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
 				if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) parent.processRef(static_cast<clang::DeclRefExpr*>(stmt));
 				return true;
 			}
-		}; // ScanRefs::Impl
+		}; // ScanDecls::Impl
 
 		virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
 			parent.sourceManager = &ci.getSourceManager();
 			return new Impl(parent);
 		}
-	}; // ScanRefs
+	}; // ScanDecls
 
 	template<class Action> static clang::tooling::FrontendActionFactory * makeAction(ReplaceRefs & parent) {
 		struct Factory : clang::tooling::FrontendActionFactory {
@@ -142,9 +119,8 @@ struct ReplaceRefs {
 		clang::tooling::ClangTool tool(db, sources);
 		ReplaceRefs top(renames);
 
-		int r = tool.run(makeAction<ScanDecls>(top));
+		int r = tool.run(makeAction<Scan>(top));
 		//if(!r) return r;
-		r = tool.run(makeAction<ScanRefs>(top));
 		top.dump();
 		return r;
 		// TODO : build replacements from refs
