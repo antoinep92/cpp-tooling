@@ -51,7 +51,8 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
 			std::cout << "Scanning AST..." << std::endl;
 			TraverseDecl(context.getTranslationUnitDecl());
-			dump();
+			//dump();
+			addReplacements();
 		}
 		bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
 			if(llvm::dyn_cast<clang::NamedDecl>(decl)) {
@@ -84,14 +85,33 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 			return true;
 		}
 
+		template<class X> void addReplacement(const X & xpr, const std::string & replacement) {
+			auto start = sourceManager.getSpellingLoc(xpr.getLocStart()), end = sourceManager.getSpellingLoc(xpr.getLocEnd());
+			std::string original(
+				sourceManager.getCharacterData(start),
+				sourceManager.getDecomposedLoc(clang::Lexer::getLocForEndOfToken(end, 0, sourceManager, clang::LangOptions())).second
+				- sourceManager.getDecomposedLoc(start).second
+			);
+			std::cout << '\t' << original << "  ==>  " << replacement << std::endl;
+			replacements.insert(clang::tooling::Replacement(sourceManager, clang::CharSourceRange::getTokenRange(xpr.getSourceRange()), replacement));
+		}
+		void addReplacements() {
+			std::cout << "computing patch..." << std::endl;
+			for(auto & ip : index) {
+				for(auto decl : ip.second.declarations) addReplacement(*decl, ip.second.rename.second);
+				for(auto ref : ip.second.references) addReplacement(*ref, ip.second.rename.second);
+			}
+
+		}
+
 		void dump() const {
 			for(auto & ip : index) {
 				std::cout << ip.second.rename.first << " ==> " << ip.second.rename.second << std::endl;
 				std::cout << '\t' << "cannonical declaration : " << ip.first << std::endl;
 				std::cout << '\t' << "declarations:" << std::endl;
-				for(auto & decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
+				for(auto decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
 				std::cout << '\t' << "referencing expressions:" << std::endl;
-				for(auto & ref : ip.second.references) std::cout << "\t\t" << ref << std::endl;
+				for(auto ref : ip.second.references) std::cout << "\t\t" << ref << std::endl;
 			}
 		}
 	}; // Impl
