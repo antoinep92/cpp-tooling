@@ -48,45 +48,39 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		Impl(const Renames & renames, clang::tooling::Replacements & replacements, clang::SourceManager & sourceManager) :
 			renames(renames), replacements(replacements), sourceManager(sourceManager) {}
 
-		void processDecl(clang::NamedDecl * decl) {
-			auto iter = renames.find(decl->getQualifiedNameAsString());
-			if(iter != renames.end()) {
-				decl->dump();
-				decl->getUnderlyingDecl()->dump();
-				decl->getCanonicalDecl()->dump();
-				auto & item = index[decl->getCanonicalDecl()];
-				item.rename = *iter;
-				item.declarations.insert(decl);
-			}
-		}
-
-		void processRef(clang::DeclRefExpr * ref) {
-			// TODO : find dump definition and find why it makes this work!
-			auto name = ref->getDecl()->getQualifiedNameAsString();
-			for(auto & i : index) {
-				if(name == i.second.rename.first) {
-					ref->dump();
-					ref->getDecl()->dump();
-					ref->getDecl()->getUnderlyingDecl()->dump();
-					ref->getDecl()->getCanonicalDecl()->dump();
-				}
-			}
-			auto iter = index.find(ref->getDecl()->getCanonicalDecl());
-			if(iter != index.end()) iter->second.references.insert(ref);
-		}
-
 		void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
-			std::cout << "Scanning decls..." << std::endl;
+			std::cout << "Scanning AST..." << std::endl;
 			TraverseDecl(context.getTranslationUnitDecl());
 			dump();
 		}
 		bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
-			if(llvm::dyn_cast<clang::NamedDecl>(decl)) processDecl(static_cast<clang::NamedDecl*>(decl));
+			if(llvm::dyn_cast<clang::NamedDecl>(decl)) {
+				auto iter = renames.find(static_cast<clang::NamedDecl*>(decl)->getQualifiedNameAsString());
+				if(iter != renames.end()) {
+					decl->dump();
+					decl->getCanonicalDecl()->dump();
+					auto & item = index[decl->getCanonicalDecl()];
+					item.rename = *iter;
+					item.declarations.insert(decl);
+				}
+			}
 			return true;
 		}
 
 		bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
-			if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) processRef(static_cast<clang::DeclRefExpr*>(stmt));
+			if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) {
+				// TODO : find dump definition and find why it makes this work!
+				auto name = static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getQualifiedNameAsString();
+				for(auto & i : index) {
+					if(name == i.second.rename.first) {
+						static_cast<clang::DeclRefExpr*>(stmt)->dump();
+						static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->dump();
+						static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getCanonicalDecl()->dump();
+					}
+				}
+				auto iter = index.find(static_cast<clang::DeclRefExpr*>(stmt)->getDecl()->getCanonicalDecl());
+				if(iter != index.end()) iter->second.references.insert(static_cast<clang::DeclRefExpr*>(stmt));
+			}
 			return true;
 		}
 
