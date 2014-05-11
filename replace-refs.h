@@ -23,119 +23,100 @@
 #include <unordered_set>
 #include <string>
 
-struct ReplaceRefs {
+struct ReplaceRefs : clang::ASTFrontendAction {
 
-	typedef std::unordered_map<
-		std::string,	/* qualified original name */
-		std::string		/* unqualified target name */
-	> Renames;
-	Renames renames;	// input
-
-	struct Item {
-		std::pair<std::string, std::string> rename;
-		std::unordered_set<clang::Decl*> declarations;
-		std::unordered_set<clang::DeclRefExpr*> references;
-	};
-
-	typedef std::unordered_map<
-		clang::Decl*,	// canonical decl
-		Item			// renaming info, declarations and references
-	> Index;
-	Index index;
-
-	clang::SourceManager * sourceManager = 0;
-	//clang::tooling::Replacements & replacements;
-
+	typedef std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */> Renames;
+	Renames renames;
 	ReplaceRefs(const Renames & renames) : renames(renames) {}
 
-	void processDecl(clang::NamedDecl * decl) { // first pass handler
-		auto iter = renames.find(decl->getQualifiedNameAsString());
-		if(iter != renames.end()) {
-			decl->dump();
-			decl->getUnderlyingDecl()->dump();
-			decl->getCanonicalDecl()->dump();
-			auto & item = index[decl->getCanonicalDecl()];
-			item.rename = *iter;
-			item.declarations.insert(decl);
-		}
-	}
+	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
 
-	void processRef(clang::DeclRefExpr * ref) { // second pass handler
-		// TODO : find dump definition and find why it makes this work!
-		auto name = ref->getDecl()->getQualifiedNameAsString();
-		for(auto & i : index) {
-			if(name == i.second.rename.first) {
-				ref->dump();
-				ref->getDecl()->dump();
-				ref->getDecl()->getUnderlyingDecl()->dump();
-				ref->getDecl()->getCanonicalDecl()->dump();
-			}
-		}
-		auto iter = index.find(ref->getDecl()->getCanonicalDecl());
-		if(iter != index.end()) {
-			iter->second.references.insert(ref);
-		}
-	}
-
-	struct Scan : clang::ASTFrontendAction { // first pass traversal
-		ReplaceRefs & parent;
-		Scan(ReplaceRefs & parent) : parent(parent) {}
-
-		struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
-			ReplaceRefs & parent;
-			Impl(ReplaceRefs & parent): parent(parent) {}
-
-			void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
-				std::cout << "Scanning decls..." << std::endl;
-				TraverseDecl(context.getTranslationUnitDecl());
-			}
-			bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
-				if(llvm::dyn_cast<clang::NamedDecl>(decl)) parent.processDecl(static_cast<clang::NamedDecl*>(decl));
-				return true;
-			}
-
-			bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
-				if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) parent.processRef(static_cast<clang::DeclRefExpr*>(stmt));
-				return true;
-			}
-		}; // ScanDecls::Impl
-
-		virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
-			parent.sourceManager = &ci.getSourceManager();
-			return new Impl(parent);
-		}
-	}; // ScanDecls
-
-	template<class Action> static clang::tooling::FrontendActionFactory * makeAction(ReplaceRefs & parent) {
-		struct Factory : clang::tooling::FrontendActionFactory {
-			ReplaceRefs & parent;
-			Factory(ReplaceRefs & parent) : parent(parent) {}
-			clang::FrontendAction *create() override { return new Action(parent); }
+		struct Item {
+			std::pair<std::string, std::string> rename;
+			std::unordered_set<clang::Decl*> declarations;
+			std::unordered_set<clang::DeclRefExpr*> references;
 		};
-		return new Factory(parent);
+		std::unordered_map<clang::Decl*, Item> index;
+
+		const Renames & renames;
+		clang::SourceManager & sourceManager;
+		//clang::tooling::Replacements & replacements;
+
+		Impl(const Renames & renames, clang::SourceManager & sourceManager) : renames(renames), sourceManager(sourceManager) {}
+
+		void processDecl(clang::NamedDecl * decl) {
+			auto iter = renames.find(decl->getQualifiedNameAsString());
+			if(iter != renames.end()) {
+				decl->dump();
+				decl->getUnderlyingDecl()->dump();
+				decl->getCanonicalDecl()->dump();
+				auto & item = index[decl->getCanonicalDecl()];
+				item.rename = *iter;
+				item.declarations.insert(decl);
+			}
+		}
+
+		void processRef(clang::DeclRefExpr * ref) {
+			// TODO : find dump definition and find why it makes this work!
+			auto name = ref->getDecl()->getQualifiedNameAsString();
+			for(auto & i : index) {
+				if(name == i.second.rename.first) {
+					ref->dump();
+					ref->getDecl()->dump();
+					ref->getDecl()->getUnderlyingDecl()->dump();
+					ref->getDecl()->getCanonicalDecl()->dump();
+				}
+			}
+			auto iter = index.find(ref->getDecl()->getCanonicalDecl());
+			if(iter != index.end()) iter->second.references.insert(ref);
+		}
+
+		void HandleTranslationUnit(clang::ASTContext & context) override { // from ASTConsumer
+			std::cout << "Scanning decls..." << std::endl;
+			TraverseDecl(context.getTranslationUnitDecl());
+			dump();
+		}
+		bool VisitDecl(clang::Decl * decl) { // from RecursiveASTVisitor
+			if(llvm::dyn_cast<clang::NamedDecl>(decl)) processDecl(static_cast<clang::NamedDecl*>(decl));
+			return true;
+		}
+
+		bool VisitStmt(clang::Stmt * stmt) { // from RecursiveASTVisitor
+			if(llvm::dyn_cast<clang::DeclRefExpr>(stmt)) processRef(static_cast<clang::DeclRefExpr*>(stmt));
+			return true;
+		}
+
+		void dump() const {
+			for(auto & ip : index) {
+				std::cout << ip.second.rename.first << " ==> " << ip.second.rename.second << std::endl;
+				std::cout << '\t' << "cannonical declaration : " << ip.first << std::endl;
+				std::cout << '\t' << "declarations:" << std::endl;
+				for(auto & decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
+				std::cout << '\t' << "referencing expressions:" << std::endl;
+				for(auto & ref : ip.second.references) std::cout << "\t\t" << ref << std::endl;
+			}
+		}
+	}; // Impl
+
+	static clang::tooling::FrontendActionFactory * newFactory(const Renames & renames) {
+			struct Factory : clang::tooling::FrontendActionFactory {
+					const Renames & renames;
+					Factory(const Renames & renames) : renames(renames) {}
+					clang::FrontendAction *create() override { return new ReplaceRefs(renames); }
+			};
+			return new Factory(renames);
+	}
+
+	virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
+		return new Impl(renames, ci.getSourceManager());
 	}
 
 	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources, const Renames & renames) {
 		clang::tooling::ClangTool tool(db, sources);
-		ReplaceRefs top(renames);
-
-		int r = tool.run(makeAction<Scan>(top));
-		//if(!r) return r;
-		top.dump();
-		return r;
+		return tool.run(newFactory(renames));
 		// TODO : build replacements from refs
 	}
 
-	void dump() const {
-		for(auto & ip : index) {
-			std::cout << ip.second.rename.first << " ==> " << ip.second.rename.second << std::endl;
-			std::cout << '\t' << "cannonical declaration : " << ip.first << std::endl;
-			std::cout << '\t' << "declarations:" << std::endl;
-			for(auto & decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
-			std::cout << '\t' << "referencing expressions:" << std::endl;
-			for(auto & ref : ip.second.references) std::cout << "\t\t" << ref << std::endl;
-		}
-	}
 };
 
 
