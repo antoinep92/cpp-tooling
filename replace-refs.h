@@ -43,7 +43,7 @@ struct ReplaceRefs {
 	> Index;
 	Index index;
 
-	//clang::SourceManager & sourceManager;
+	clang::SourceManager * sourceManager = 0;
 	//clang::tooling::Replacements & replacements;
 
 	ReplaceRefs(const Renames & renames) : renames(renames) {}
@@ -51,9 +51,12 @@ struct ReplaceRefs {
 	void processDecl(clang::NamedDecl * decl) { // first pass handler
 		auto iter = renames.find(decl->getQualifiedNameAsString());
 		if(iter != renames.end()) {
+			decl->dump();
+			decl->getUnderlyingDecl()->dump();
+			decl->getCanonicalDecl()->dump();
 			auto & item = index[decl->getCanonicalDecl()];
 			item.rename = *iter;
-			item.declarations.insert(decl->getUnderlyingDecl());
+			item.declarations.insert(decl);
 		}
 	}
 
@@ -75,7 +78,8 @@ struct ReplaceRefs {
 			}
 		}; // ScanDecls::Impl
 
-		virtual Impl* CreateASTConsumer(clang::CompilerInstance&, llvm::StringRef) override {
+		virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
+			parent.sourceManager = &ci.getSourceManager();
 			return new Impl(parent);
 		}
 	}; // ScanDecls
@@ -84,10 +88,20 @@ struct ReplaceRefs {
 
 
 	void processRef(clang::DeclRefExpr * ref) { // second pass handler
-		//ref->dump();
 		// TODO : find dump definition and find why it makes this work!
+		auto name = ref->getDecl()->getQualifiedNameAsString();
+		for(auto & i : index) {
+			if(name == i.second.rename.first) {
+				ref->dump();
+				ref->getDecl()->dump();
+				ref->getDecl()->getUnderlyingDecl()->dump();
+				ref->getDecl()->getCanonicalDecl()->dump();
+			}
+		}
 		auto iter = index.find(ref->getDecl()->getCanonicalDecl());
-		if(iter != index.end()) iter->second.references.insert(ref);
+		if(iter != index.end()) {
+			iter->second.references.insert(ref);
+		}
 	}
 
 	struct ScanRefs : clang::ASTFrontendAction { // second pass traversal
@@ -109,7 +123,8 @@ struct ReplaceRefs {
 			}
 		}; // ScanRefs::Impl
 
-		virtual Impl* CreateASTConsumer(clang::CompilerInstance&, llvm::StringRef) override {
+		virtual Impl* CreateASTConsumer(clang::CompilerInstance& ci, llvm::StringRef) override {
+			parent.sourceManager = &ci.getSourceManager();
 			return new Impl(parent);
 		}
 	}; // ScanRefs
