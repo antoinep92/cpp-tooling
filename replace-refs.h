@@ -28,6 +28,7 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 	typedef std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */> Renames;
 	Renames renames;
 	clang::tooling::Replacements & replacements;
+	static const bool save = true;
 	ReplaceRefs(const Renames & renames, clang::tooling::Replacements & replacements) :
 		renames(renames), replacements(replacements) {}
 
@@ -120,12 +121,15 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 
 	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources, const Renames & renames) {
 		clang::tooling::RefactoringTool tool(db, sources);
-		int ret = tool.run(newFactory(renames, tool.getReplacements()));
-		std::cout << "\nPatch shown below:" << std::endl;
-		for(auto & replacement : tool.getReplacements()) {
-			std::cout << "  " << replacement.toString() << std::endl;
+		auto factory = newFactory(renames, tool.getReplacements());
+		if(save)
+			return tool.runAndSave(factory);
+		else {
+			int ret = tool.run(factory);
+			std::cout << "\nPatch shown below:" << std::endl;
+			for(auto & replacement : tool.getReplacements()) std::cout << "  " << replacement.toString() << std::endl;
+			return ret;
 		}
-		return ret;
 	}
 
 };
