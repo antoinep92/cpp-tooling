@@ -30,7 +30,6 @@ namespace clang { namespace ast_matchers {
 // inspired by http://llvm.org/svn/llvm-project/clang-tools-extra/trunk/remove-cstr-calls/RemoveCStrCalls.cpp
 
 struct ReplaceDecls : clang::ast_matchers::MatchFinder {
-	typedef clang::ast_matchers::MatchFinder Parent;
 
 	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
 		clang::tooling::Replacements & replacements;

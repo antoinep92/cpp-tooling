@@ -25,7 +25,6 @@ namespace clang { namespace ast_matchers {
 
 
 struct FindDemo : clang::ast_matchers::MatchFinder {
-	typedef clang::ast_matchers::MatchFinder Parent;
 
 	struct Callback : clang::ast_matchers::MatchFinder::MatchCallback {
 		void run(const MatchFinder::MatchResult & result) override {
@@ -36,7 +35,6 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 	};
 
 	static int run(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
-
 		using namespace clang::ast_matchers;
 		auto match_x_field =
 			fieldDecl(
