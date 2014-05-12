@@ -24,20 +24,29 @@
 #include <string>
 
 #include <boost/algorithm/string.hpp>
+template<class C> using const_range = boost::iterator_range<typename C::const_iterator>;
+template<class C> using couple = std::pair<C,C>;
 
 struct ReplaceRefs : clang::ASTFrontendAction {
 
 	static std::string shortName(const std::string & qualified) {
-		int index = findLast(qualified, "::");
-		if(index < 0) return qualified;
-		return qualified.c_str() + index;
+		std::list<const_range<std::string>> splits;
+		boost::split(splits, qualified, [&](char c){ return c == ':'; }, boost::token_compress_on);
+		return { splits.back().begin(), splits.back().end() };
 	}
-	static std::pair<int, int> align(const std::string & word, const std::string & text) {
-		// todo: implement using boost
-		return { 0, 0 };
+	static couple<int> align(const std::string & word, const std::string & text) {
+		using R = const_range<std::string>;
+		std::list<R> matches;
+		boost::find_all(matches, text, word);
+		assert(matches.size() == 1);
+		R & match = matches.front();
+		return {
+			match.begin() - text.begin(),
+			text.size() - (match.end() - text.begin())
+		};
 	}
 
-	typedef std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */> Renames;
+	using Renames = std::unordered_map<std::string /* qualified original name */, std::string /* unqualified target name */>;
 	Renames renames;
 	clang::tooling::Replacements & replacements;
 	static const bool save = false;
@@ -45,10 +54,15 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 		renames(renames), replacements(replacements) {}
 
 	struct Impl : clang::ASTConsumer, clang::RecursiveASTVisitor<Impl> {
-		struct {
+		struct Rename {
 			std::string originalQualified, originalShort;
 			std::string newName;
-		} Rename;
+			void operator=(const couple<std::string> & strings) {
+				originalQualified = strings.first;
+				originalShort = shortName(strings.first);
+				newName = strings.second;
+			}
+		};
 		struct Item {
 			Rename rename;
 			std::unordered_set<clang::Decl*> declarations;
@@ -100,25 +114,27 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 
 		template<class X> void addReplacement(const X * xpr, const std::string & original, const std::string & replacement) {
 			auto text = nodeText(xpr);
-			std::cout << '\t' << text.str() << "  ==>  " << replacement << std::endl;
-			// TODO : handle substring for declarations
 			auto range = clang::CharSourceRange::getTokenRange(xpr->getSourceRange());
-			auto p = align(original, xpr);
-			auto target = clang::SourceRange(range.getBegin().getLocWithOffset(p.first), range.getEnd().getLocWithOffset(-p.second));
-			replacements.emplace(sourceManager, target, replacement);
+			auto p = align(original, text);
+			std::cout << '\t' << std::string(text.begin() + p.first, text.end() - p.second) << "  ==>  " << replacement << std::endl;
+			clang::CharSourceRange target{
+				clang::SourceRange(range.getBegin().getLocWithOffset(p.first), range.getEnd().getLocWithOffset(-p.second)),
+				true
+			};
+			replacements.emplace(sourceManager, target, llvm::StringRef(replacement));
 		}
 		void addReplacements() {
 			std::cout << "computing patch..." << std::endl;
 			for(auto & ip : index) {
-				for(auto decl : ip.second.declarations) addReplacement(decl, ip.second.rename.second);
-				for(auto ref : ip.second.references) addReplacement(ref, ip.second.rename.second);
+				for(auto decl : ip.second.declarations) addReplacement(decl, ip.second.rename.originalShort, ip.second.rename.newName);
+				for(auto ref : ip.second.references) addReplacement(ref, ip.second.rename.originalShort, ip.second.rename.newName);
 			}
 
 		}
 
 		void dump() const {
 			for(auto & ip : index) {
-				std::cout << ip.second.rename.first << " ==> " << ip.second.rename.second << std::endl;
+				std::cout << ip.second.rename.originalQualified << " ==> " << ip.second.rename.newName << std::endl;
 				std::cout << '\t' << "cannonical declaration : " << ip.first << std::endl;
 				std::cout << '\t' << "declarations:" << std::endl;
 				for(auto decl : ip.second.declarations) std::cout << "\t\t" << decl << std::endl;
