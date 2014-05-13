@@ -1,22 +1,6 @@
 #ifndef REPLACEDECL_H
 #define REPLACEDECL_H
-
-#include "clang/ASTMatchers/ASTMatchers.h"
-#include "clang/ASTMatchers/ASTMatchFinder.h"
-#include "clang/Tooling/Refactoring.h"
-#include "llvm/Support/CommandLine.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Tooling.h"
-#include "llvm/Support/CommandLine.h"
-#include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/AST/ASTContext.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Lex/Lexer.h"
-
-#include <sstream>
+#include "common.h"
 
 // matches a field in a namespace
 namespace clang { namespace ast_matchers {

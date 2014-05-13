@@ -7,14 +7,7 @@
  *		clang-parse -action-parse test.cpp -- -I/usr/lib/gcc/x86_64-unknown-linux-gnu/4.8.2/include -std=c++11
  *
  */
-
-#include <iostream>
-#include <functional>
-
-#include "llvm/Support/CommandLine.h"
-#include "clang/Frontend/FrontendActions.h"
-#include "clang/Tooling/CommonOptionsParser.h"
-#include "clang/Tooling/Tooling.h"
+#include "common.h"
 
 #include "print-uses.h"
 #include "find-demo.h"

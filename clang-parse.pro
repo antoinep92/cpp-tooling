@@ -29,4 +29,5 @@ HEADERS += \
     print-uses.h \
     find-demo.h \
     replace-decls.h \
-    replace-refs.h
+    replace-refs.h \
+    common.h
