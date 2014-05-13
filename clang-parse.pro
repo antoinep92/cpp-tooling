@@ -25,9 +25,10 @@ LIBS += -lLLVM-3.4 \
         -lclangEdit \
         -lclangLex \
 
+PRECOMPILED_HEADER = common.h
+
 HEADERS += \
     print-uses.h \
     find-demo.h \
     replace-decls.h \
-    replace-refs.h \
-    common.h
+    replace-refs.h
