@@ -2,9 +2,6 @@
 #define REPLACEREFS_H
 #include "common.h"
 
-template<class C> using const_range = boost::iterator_range<typename C::const_iterator>;
-template<class C> using couple = std::pair<C,C>;
-
 struct ReplaceRefs : clang::ASTFrontendAction {
 
 	static std::string shortName(const std::string & qualified) {
@@ -151,5 +148,10 @@ struct ReplaceRefs : clang::ASTFrontendAction {
 
 };
 
+namespace tools {
+int replace_refs(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources, const std::unordered_map<std::string, std::string> & renames) {
+	return ReplaceRefs::run(db, sources, renames);
+}
+}
 
 #endif // REPLACEREFS_H

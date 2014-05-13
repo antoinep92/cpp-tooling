@@ -60,4 +60,10 @@ struct PrintUses : clang::ASTFrontendAction {
 	}
 };
 
+namespace tools {
+int print_uses(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+	return PrintUses::run(db, sources);
+}
+}
+
 #endif // SIMPLEPARSE_H

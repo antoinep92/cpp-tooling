@@ -40,5 +40,10 @@ struct FindDemo : clang::ast_matchers::MatchFinder {
 
 };
 
+namespace tools {
+int find_demo(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+	return FindDemo::run(db, sources);
+}
+}
 
 #endif // NAMINGCONVENTION_H

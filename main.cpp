@@ -7,15 +7,7 @@
  *		clang-parse -action-parse test.cpp -- -I/usr/lib/gcc/x86_64-unknown-linux-gnu/4.8.2/include -std=c++11
  *
  */
-#include "common.h"
-
-#include "print-uses.h"
-#include "find-demo.h"
-#include "replace-decls.h"
-#include "replace-refs.h"
-
-// TODO: move tools to .cpp and add precompiled header to speed-up increamental builds
-
+#include "tools.h"
 static llvm::cl::OptionCategory my_options("Action selector options");
 static llvm::cl::extrahelp common_help(clang::tooling::CommonOptionsParser::HelpMessage);
 static llvm::cl::extrahelp extra_help("Help Message TODO\n\n");
@@ -59,13 +51,13 @@ int main(int argc, const char **argv) {
 
 	std::function<int()> action;
 	if(print_uses)
-		action = [&](){ return PrintUses::run(db, sources); };
+		action = [&](){ return tools::print_uses(db, sources); };
 	if(find_demo)
-		action = [&](){ return FindDemo::run(db, sources); };
+		action = [&](){ return tools::find_demo(db, sources); };
 	if(replace_decls)
-		action = [&](){ return ReplaceDecls::run(db, sources); };
+		action = [&](){ return tools::replace_decls(db, sources); };
 	if(replace_refs)
-		action = [&](){ return ReplaceRefs::run(db, sources, {{"test::array_counter", "array_cnt"},{"test::index_counter", "index_cnt"}}); };
+		action = [&](){ return tools::replace_refs(db, sources, {{"test::array_counter", "array_cnt"},{"test::index_counter", "index_cnt"}}); };
 
 
 	if(print_lex)

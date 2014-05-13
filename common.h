@@ -26,4 +26,7 @@
 
 #include <boost/algorithm/string.hpp>
 
+template<class C> using const_range = boost::iterator_range<typename C::const_iterator>;
+template<class C> using couple = std::pair<C,C>;
+
 #endif // COMMON_H

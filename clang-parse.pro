@@ -1,11 +1,12 @@
 TEMPLATE = app
-CONFIG += console
-CONFIG -= app_bundle
-CONFIG -= qt
+CONFIG += console precompile_header
+CONFIG -= app_bundle qt
 
-SOURCES += main.cpp test.cpp
+SOURCES += main.cpp test.cpp print-uses.cpp find-demo.cpp replace-decls.cpp replace-refs.cpp
 
 QMAKE_CXX = clang++
+QMAKE_LINK = clang++
+
 QMAKE_CXXFLAGS += -std=c++11 -D__STDC_LIMIT_MACROS=100 -D__STDC_CONSTANT_MACROS=100
 
 LIBS += -lLLVM-3.4 \
@@ -27,8 +28,4 @@ LIBS += -lLLVM-3.4 \
 
 PRECOMPILED_HEADER = common.h
 
-HEADERS += \
-    print-uses.h \
-    find-demo.h \
-    replace-decls.h \
-    replace-refs.h
+HEADERS += tools.h

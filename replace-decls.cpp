@@ -56,6 +56,10 @@ struct ReplaceDecls : clang::ast_matchers::MatchFinder {
 
 };
 
-
+namespace tools {
+int replace_decls(const clang::tooling::CompilationDatabase & db, llvm::ArrayRef<std::string> sources) {
+	return ReplaceDecls::run(db, sources);
+}
+}
 
 #endif // REPLACEDECL_H
